@@ -132,7 +132,7 @@ const blockToMarkdown = async (notion, block) => {
       let tableArr;
       if (has_children) {
         const tableRows = await getBlockChildren(notion, id, 100);
-        let rowsPromise = tableRows.map(async (row) => {
+        let rowsPromise = tableRows && tableRows.map(async (row) => {
           const { type } = row;
           const cells = row[type]["cells"];
 

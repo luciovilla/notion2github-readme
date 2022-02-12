@@ -6531,7 +6531,7 @@ const blockToMarkdown = async (notion, block) => {
       let tableArr;
       if (has_children) {
         const tableRows = await getBlockChildren(notion, id, 100);
-        let rowsPromise = tableRows.map(async (row) => {
+        let rowsPromise = tableRows && tableRows.map(async (row) => {
           const { type } = row;
           const cells = row[type]["cells"];
 
@@ -6866,7 +6866,7 @@ const getBlockChildren = async (notionClient, block_id, totalPage) => {
       });
       result.push(...response.results);
 
-      start_cursor = response.next_cursor;
+      start_cursor = response && response.next_cursor;
       pageCount += 1;
     } while (
       start_cursor != null &&
@@ -7084,7 +7084,7 @@ const { Client } = __nccwpck_require__(324);
 const keepaliveWorkflow = __nccwpck_require__(6563);
 
 const { toMarkdownString, pageToMarkdown } = __nccwpck_require__(3003);
-const { commitReadme } = __nccwpck_require__(2024);
+const commitReadme = __nccwpck_require__(2024);
 const buildReadme = __nccwpck_require__(5068);
 
 async function run() {

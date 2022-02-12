@@ -6,7 +6,7 @@ const { Client } = require("@notionhq/client");
 const keepaliveWorkflow = require("keepalive-workflow");
 
 const { toMarkdownString, pageToMarkdown } = require("./notion-to-markdown");
-const { commitReadme } = require("./utils/commitReadme");
+const commitReadme = require("./utils/commitReadme");
 const buildReadme = require("./utils/buildReadme");
 
 async function run() {

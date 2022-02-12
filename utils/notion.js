@@ -11,7 +11,7 @@ const getBlockChildren = async (notionClient, block_id, totalPage) => {
       });
       result.push(...response.results);
 
-      start_cursor = response.next_cursor;
+      start_cursor = response && response.next_cursor;
       pageCount += 1;
     } while (
       start_cursor != null &&
