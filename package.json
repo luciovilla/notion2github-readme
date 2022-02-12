@@ -1,0 +1,34 @@
+{
+  "name": "notion2github",
+  "version": "0.0.1",
+  "description": "Update your Github profile README from Notion",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint .",
+    "prepare": "ncc build index.js -o dist",
+    "all": "npm run lint && npm run prepare"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luciovilla/notion2github.git"
+  },
+  "keywords": [
+    "Github",
+    "Actions",
+    "Notion"
+  ],
+  "author": "Lucio Villa",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/luciovilla/notion2github/issues"
+  },
+  "dependencies": {
+    "@actions/core": "^1.6.0",
+    "@notionhq/client": "^0.4.13",
+    "keepalive-workflow": "^1.0.7"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.33.2",
+    "eslint": "^8.9.0"
+  }
+}
