@@ -6,8 +6,8 @@ const { Client } = require("@notionhq/client");
 const keepaliveWorkflow = require("keepalive-workflow");
 
 const { toMarkdownString, pageToMarkdown } = require("./notion-to-markdown");
-const { buildReadme } = require("./utils/buildReadme");
 const { commitReadme } = require("./utils/commitReadme");
+const buildReadme = require("./utils/buildReadme");
 
 async function run() {
   const PAGE_ID = process.env.NOTION_PAGE_ID;

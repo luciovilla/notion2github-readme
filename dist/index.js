@@ -7084,12 +7084,12 @@ const { Client } = __nccwpck_require__(324);
 const keepaliveWorkflow = __nccwpck_require__(6563);
 
 const { toMarkdownString, pageToMarkdown } = __nccwpck_require__(3003);
-const { buildReadme } = __nccwpck_require__(5068);
 const { commitReadme } = __nccwpck_require__(2024);
+const buildReadme = __nccwpck_require__(5068);
 
 async function run() {
-  const PAGE_ID = core.getInput("notion_page_id");
-  const NOTION_TOKEN = core.getInput("notion_token");
+  const PAGE_ID = process.env.NOTION_PAGE_ID;
+  const NOTION_TOKEN = process.env.NOTION_TOKEN;
   const GITHUB_TOKEN = core.getInput("gh_token");
   const ENABLE_KEEPALIVE = core.getInput("enable_keepalive") === "true";
   const committerUsername = core.getInput("committer_username");
