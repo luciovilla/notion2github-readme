@@ -7,6 +7,12 @@ inputs:
     description: 'GitHub access token with Repo scope'
     required: false
     default: ${{ github.token }}
+  notion-token:
+    description: 'Your Notion API Token'
+    required: true
+  notion-page-id:
+    description: 'The Notion page id'
+    required: true
   committer_username:
     description: "Username used while committing to the repo"
     default: "notion2github-action"

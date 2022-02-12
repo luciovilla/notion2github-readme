@@ -10,8 +10,8 @@ const commitReadme = require("./utils/commitReadme");
 const buildReadme = require("./utils/buildReadme");
 
 async function run() {
-  const PAGE_ID = process.env.NOTION_PAGE_ID;
-  const NOTION_TOKEN = process.env.NOTION_TOKEN;
+  const PAGE_ID = core.getInput("notion-page-id", { required: true });
+  const NOTION_TOKEN = core.getInput("notion-token", { required: true });
   const GITHUB_TOKEN = core.getInput("gh_token");
   const ENABLE_KEEPALIVE = core.getInput("enable_keepalive") === "true";
   const committerUsername = core.getInput("committer_username");
