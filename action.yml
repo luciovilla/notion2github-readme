@@ -15,15 +15,15 @@ inputs:
     required: true
   committer_username:
     description: "Username used while committing to the repo"
-    default: "notion2github-action"
+    default: "GitHub Action"
     required: false
   committer_email:
     description: "Email id used while committing to the repo"
-    default: "notion2github@example.com"
+    default: "action@github.com"
     required: false
   commit_message:
     description: "Commit message used for auto-committing to the repo"
-    default: "Auto-updated with latest changes from Notion"
+    default: "Automated update with latest changes from Notion"
     required: false
 runs:
   using: node16
