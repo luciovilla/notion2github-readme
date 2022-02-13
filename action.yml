@@ -23,7 +23,7 @@ inputs:
     required: false
   commit_message:
     description: "Commit message used for auto-committing to the repo"
-    default: "Updated with the latest changes from Notion"
+    default: "Auto-updated with latest changes from Notion"
     required: false
 runs:
   using: node16
