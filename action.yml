@@ -21,9 +21,9 @@ inputs:
     description: "Email id used while committing to the repo"
     default: "notion2github@example.com"
     required: false
-  enable_keepalive:
-    description: "Enables the feature that keeps the repo active by automatically committing to it even though there is no change"
-    default: "true"
+  commit_message:
+    description: "Commit message used for auto-committing to the repo"
+    default: "Updated with the latest changes from Notion"
     required: false
 runs:
   using: node16
