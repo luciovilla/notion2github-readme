@@ -12,7 +12,6 @@ const exec = (cmd, args = [], options = {}) =>
     }
     const app = spawn(cmd, args, optionsToCLI);
     if (app.stdout) {
-      // Only needed for pipes
       app.stdout.on("data", function (data) {
         outputData += data.toString();
       });
@@ -27,7 +26,7 @@ const exec = (cmd, args = [], options = {}) =>
     app.on("error", () => reject({ code: 1, outputData }));
   });
 
-const commitReadme = async (githubToken, readmeFilePaths) => {
+const commitReadme = async (githubToken, readmeFilePath) => {
   // Getting config
   const committerUsername = core.getInput("committer_username");
   const committerEmail = core.getInput("committer_email");
@@ -44,7 +43,7 @@ const commitReadme = async (githubToken, readmeFilePaths) => {
     ]);
   }
   await exec("git", ["config", "--global", "user.name", committerUsername]);
-  await exec("git", ["add", ...readmeFilePaths]);
+  await exec("git", ["add", readmeFilePath]);
   await exec("git", ["commit", "-m", commitMessage]);
   await exec("git", ["push"]);
   core.info("Readme updated successfully in the upstream repository");
