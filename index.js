@@ -2,6 +2,7 @@ const fs = require("fs");
 const process = require("process");
 
 const core = require("@actions/core");
+const github = require("@actions/github")
 const { Client } = require("@notionhq/client");
 const keepaliveWorkflow = require("keepalive-workflow");
 
@@ -16,6 +17,10 @@ async function run() {
   const ENABLE_KEEPALIVE = core.getInput("enable_keepalive") === "true";
   const committerUsername = core.getInput("committer_username");
   const committerEmail = core.getInput("committer_email");
+
+  core.info(`context event: ${github.context.eventName}`);
+  core.info(`context action: ${github.context.action}`);
+  core.info(`payload action: ${github.context.payload.action}`);
 
   const notion = new Client({ auth: NOTION_TOKEN });
   const mdblocks = await pageToMarkdown(notion, PAGE_ID);
