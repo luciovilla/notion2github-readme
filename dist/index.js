@@ -8842,9 +8842,9 @@ async function run() {
       r.json().then((data) => data.allNotas)
     );
     // Convert blog posts to markdown
-    const postListMarkdown = blogPostLinks.map(
-      (post) => `\n- [${post.title}](${post.url})`
-    );
+    const postListMarkdown = blogPostLinks.reduce((acc, cur) => {
+      return acc + `\n- [${cur.title}](${cur.url})`;
+    }, "");
     // Add blog posts to Readme data
     const readmeWithBlogPosts = buildReadme(mdString, postListMarkdown);
 
