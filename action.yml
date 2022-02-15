@@ -25,6 +25,12 @@ inputs:
     description: "Commit message used for auto-committing to the repo"
     default: "Automated update with latest changes from Notion"
     required: false
+  blog_api:
+    description: "Blog API url for creating list of blog posts"
+    required: false
+  spotify_api:
+    description: "Spotify API url for checking what song currently listening to"
+    required: false
 runs:
   using: node16
   main: dist/index.js
