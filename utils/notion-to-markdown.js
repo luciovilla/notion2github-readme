@@ -73,7 +73,6 @@ const blockToMarkdown = async (notion, block) => {
 
   let parsedData = "";
   const { type } = block;
-  // console.log({ block });
 
   switch (type) {
     case "image":
@@ -132,21 +131,23 @@ const blockToMarkdown = async (notion, block) => {
       let tableArr;
       if (has_children) {
         const tableRows = await getBlockChildren(notion, id, 100);
-        let rowsPromise = tableRows && tableRows.map(async (row) => {
-          const { type } = row;
-          const cells = row[type]["cells"];
+        let rowsPromise =
+          tableRows &&
+          tableRows.map(async (row) => {
+            const { type } = row;
+            const cells = row[type]["cells"];
 
-          let cellStringPromise = cells.map(
-            async (cell) =>
-              await blockToMarkdown({
-                type: "paragraph",
-                paragraph: { text: cell },
-              })
-          );
+            let cellStringPromise = cells.map(
+              async (cell) =>
+                await blockToMarkdown({
+                  type: "paragraph",
+                  paragraph: { text: cell },
+                })
+            );
 
-          const cellStringArr = await Promise.all(cellStringPromise);
-          tableArr.push(cellStringArr);
-        });
+            const cellStringArr = await Promise.all(cellStringPromise);
+            tableArr.push(cellStringArr);
+          });
         await Promise.all(rowsPromise || []);
       }
       parsedData = table(tableArr);
@@ -223,7 +224,6 @@ const blockToMarkdown = async (notion, block) => {
 };
 
 const annotatePlainText = (text, annotations) => {
-  // if text is all spaces, don't annotate
   if (text.match(/^\s*$/)) return text;
 
   const leadingSpaceMatch = text.match(/^(\s*)/);

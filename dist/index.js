@@ -8098,261 +8098,6 @@ module.exports.implForWrapper = function (wrapper) {
 
 /***/ }),
 
-/***/ 3003:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const getBlockChildren = __nccwpck_require__(6348);
-const {
-  addTabSpace,
-  inlineCode,
-  bold,
-  italic,
-  strikethrough,
-  underline,
-  codeBlock,
-  link,
-  heading1,
-  heading2,
-  heading3,
-  quote,
-  callout,
-  bullet,
-  todo,
-  image,
-  divider,
-  table,
-} = __nccwpck_require__(694);
-
-const toMarkdownString = (mdBlocks, nestingLevel = 0) => {
-  let mdString = "";
-  mdBlocks.forEach((mdBlocks) => {
-    if (mdBlocks.parent) {
-      mdString += `
-${addTabSpace(mdBlocks.parent, nestingLevel)}
-`;
-    }
-    if (mdBlocks.children && mdBlocks.children.length > 0) {
-      mdString += toMarkdownString(mdBlocks.children, nestingLevel + 1);
-    }
-  });
-  return mdString;
-};
-
-const pageToMarkdown = async (notion, id, totalPage = null) => {
-  if (!notion) {
-    throw new Error("Notion client is not provided.");
-  }
-  const blocks = await getBlockChildren(notion, id, totalPage);
-  const parsedData = await blocksToMarkdown(notion, blocks);
-  return parsedData;
-};
-
-const blocksToMarkdown = async (notion, blocks, mdBlocks = []) => {
-  if (!blocks) return mdBlocks;
-
-  for (let i = 0; i < blocks.length; i++) {
-    let block = blocks[i];
-
-    if ("has_children" in block && block.has_children) {
-      let child_blocks = await getBlockChildren(notion, block.id);
-      mdBlocks.push({
-        parent: await blockToMarkdown(notion, block),
-        children: [],
-      });
-
-      let l = mdBlocks.length;
-      await blocksToMarkdown(child_blocks, mdBlocks[l - 1].children);
-      continue;
-    }
-    let tmp = await blockToMarkdown(notion, block);
-
-    mdBlocks.push({ parent: tmp, children: [] });
-  }
-  return mdBlocks;
-};
-
-const blockToMarkdown = async (notion, block) => {
-  if (!("type" in block)) return "";
-
-  let parsedData = "";
-  const { type } = block;
-  // console.log({ block });
-
-  switch (type) {
-    case "image":
-      {
-        let blockContent = block.image;
-        const image_caption_plain = blockContent.caption
-          .map((item) => item.plain_text)
-          .join("");
-        const image_type = blockContent.type;
-        if (image_type === "external")
-          return image(image_caption_plain, blockContent.external.url);
-        if (image_type === "file")
-          return image(image_caption_plain, blockContent.file.url);
-      }
-      break;
-
-    case "divider": {
-      return divider();
-    }
-
-    case "equation": {
-      return codeBlock(block.equation.expression);
-    }
-
-    case "video":
-    case "file":
-    case "pdf":
-      {
-        let blockContent;
-        if (type === "video") blockContent = block.video;
-        if (type === "file") blockContent = block.file;
-        if (type === "pdf") blockContent = block.pdf;
-        if (blockContent) {
-          const file_type = blockContent.type;
-          if (file_type === "external")
-            return link("image", blockContent.external.url);
-          if (file_type === "file") return link("image", blockContent.file.url);
-        }
-      }
-      break;
-
-    case "bookmark":
-    case "embed":
-    case "link_preview":
-      {
-        let blockContent;
-        if (type === "bookmark") blockContent = block.bookmark;
-        if (type === "embed") blockContent = block.embed;
-        if (type === "link_preview") blockContent = block.link_preview;
-        if (blockContent) return link(type, blockContent.url);
-      }
-      break;
-
-    case "table": {
-      const { id, has_children } = block;
-      let tableArr;
-      if (has_children) {
-        const tableRows = await getBlockChildren(notion, id, 100);
-        let rowsPromise = tableRows && tableRows.map(async (row) => {
-          const { type } = row;
-          const cells = row[type]["cells"];
-
-          let cellStringPromise = cells.map(
-            async (cell) =>
-              await blockToMarkdown({
-                type: "paragraph",
-                paragraph: { text: cell },
-              })
-          );
-
-          const cellStringArr = await Promise.all(cellStringPromise);
-          tableArr.push(cellStringArr);
-        });
-        await Promise.all(rowsPromise || []);
-      }
-      parsedData = table(tableArr);
-      return parsedData;
-    }
-
-    default: {
-      let blockContent = block[type].text || [];
-      blockContent.map((content) => {
-        const annotations = content.annotations;
-        let plain_text = content.plain_text;
-
-        plain_text = annotatePlainText(plain_text, annotations);
-
-        if (content["href"]) plain_text = link(plain_text, content["href"]);
-
-        parsedData += plain_text;
-      });
-    }
-  }
-
-  switch (type) {
-    case "code":
-      {
-        parsedData = codeBlock(parsedData, block[type].language);
-      }
-      break;
-
-    case "heading_1":
-      {
-        parsedData = heading1(parsedData);
-      }
-      break;
-
-    case "heading_2":
-      {
-        parsedData = heading2(parsedData);
-      }
-      break;
-
-    case "heading_3":
-      {
-        parsedData = heading3(parsedData);
-      }
-      break;
-
-    case "quote":
-      {
-        parsedData = quote(parsedData);
-      }
-      break;
-
-    case "callout":
-      {
-        parsedData = callout(parsedData, block[type].icon);
-      }
-      break;
-
-    case "bulleted_list_item":
-    case "numbered_list_item":
-      {
-        parsedData = bullet(parsedData);
-      }
-      break;
-
-    case "to_do":
-      {
-        parsedData = todo(parsedData, block.to_do.checked);
-      }
-      break;
-  }
-
-  return parsedData;
-};
-
-const annotatePlainText = (text, annotations) => {
-  // if text is all spaces, don't annotate
-  if (text.match(/^\s*$/)) return text;
-
-  const leadingSpaceMatch = text.match(/^(\s*)/);
-  const trailingSpaceMatch = text.match(/(\s*)$/);
-
-  const leading_space = leadingSpaceMatch ? leadingSpaceMatch[0] : "";
-  const trailing_space = trailingSpaceMatch ? trailingSpaceMatch[0] : "";
-
-  text = text.trim();
-
-  if (text !== "") {
-    if (annotations.code) text = inlineCode(text);
-    if (annotations.bold) text = bold(text);
-    if (annotations.italic) text = italic(text);
-    if (annotations.strikethrough) text = strikethrough(text);
-    if (annotations.underline) text = underline(text);
-  }
-
-  return leading_space + text + trailing_space;
-};
-
-module.exports = { toMarkdownString, pageToMarkdown };
-
-
-/***/ }),
-
 /***/ 5068:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -8457,112 +8202,12 @@ module.exports = commitReadme;
 
 /***/ }),
 
-/***/ 694:
-/***/ ((module) => {
+/***/ 9879:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-const inlineCode = (text) => {
-  return `\`${text}\``;
-};
-
-const bold = (text) => {
-  return `**${text}**`;
-};
-
-const italic = (text) => {
-  return `_${text}_`;
-};
-
-const strikethrough = (text) => {
-  return `~~${text}~~`;
-};
-
-const underline = (text) => {
-  return `<u>${text}</u>`;
-};
-
-const link = (text, href) => {
-  return `[${text}](${href})`;
-};
-
-const codeBlock = (text, language) => {
-  return `\`\`\`${language}
-${text}
-\`\`\``;
-};
-
-const heading1 = (text) => {
-  return `# ${text}`;
-};
-
-const heading2 = (text) => {
-  return `## ${text}`;
-};
-
-const heading3 = (text) => {
-  return `### ${text}`;
-};
-
-const quote = (text) => {
-  // the replace is done to handle multiple lines
-  return `> ${text.replace(/\n/g, "  \n>")}`;
-};
-
-const callout = (text, icon) => {
-  let emoji;
-  if (icon.type === "emoji") {
-    emoji = icon.emoji;
-  }
-
-  // the replace is done to handle multiple lines
-  return `> ${emoji ? emoji + " " : ""}${text.replace(/\n/g, "  \n>")}`;
-};
-
-const bullet = (text) => {
-  return `- ${text}`;
-};
-
-const todo = (text, checked) => {
-  return checked ? `- [x] ${text}` : `- [ ] ${text}`;
-};
-
-const image = (alt, href) => {
-  return `![${alt}](${href})`;
-};
-
-const addTabSpace = (text, n = 0) => {
-  const tab = "	";
-  for (let i = 0; i < n; i++) {
-    if (text.includes("\n")) {
-      const multiLineText = text.split(/(?<=\n)/).join(tab);
-      text = tab + multiLineText;
-    } else text = tab + text;
-  }
-  return text;
-};
-
-const divider = () => {
-  return "---";
-};
-
-const tableRowHeader = (row) => {
-  let header = row.join("|");
-  // eslint-disable-next-line no-unused-vars
-  let divider = row.map((_) => "---").join("|");
-  return `${header}\n${divider}`;
-};
-
-const tableRowBody = (row) => {
-  return row.join("|");
-};
-
-const table = (cells) => {
-  const tableRows = cells.map((row, i) =>
-    !i ? tableRowHeader(row) : tableRowBody(row)
-  );
-  return tableRows.join("\n");
-};
-
-module.exports = {
+const getBlockChildren = __nccwpck_require__(6310);
+const {
+  addTabSpace,
   inlineCode,
   bold,
   italic,
@@ -8578,43 +8223,252 @@ module.exports = {
   bullet,
   todo,
   image,
-  addTabSpace,
   divider,
   table,
+} = __nccwpck_require__(9393);
+
+const toMarkdownString = (mdBlocks, nestingLevel = 0) => {
+  let mdString = "";
+  mdBlocks.forEach((mdBlocks) => {
+    if (mdBlocks.parent) {
+      mdString += `
+${addTabSpace(mdBlocks.parent, nestingLevel)}
+`;
+    }
+    if (mdBlocks.children && mdBlocks.children.length > 0) {
+      mdString += toMarkdownString(mdBlocks.children, nestingLevel + 1);
+    }
+  });
+  return mdString;
 };
+
+const pageToMarkdown = async (notion, id, totalPage = null) => {
+  if (!notion) {
+    throw new Error("Notion client is not provided.");
+  }
+  const blocks = await getBlockChildren(notion, id, totalPage);
+  const parsedData = await blocksToMarkdown(notion, blocks);
+  return parsedData;
+};
+
+const blocksToMarkdown = async (notion, blocks, mdBlocks = []) => {
+  if (!blocks) return mdBlocks;
+
+  for (let i = 0; i < blocks.length; i++) {
+    let block = blocks[i];
+
+    if ("has_children" in block && block.has_children) {
+      let child_blocks = await getBlockChildren(notion, block.id);
+      mdBlocks.push({
+        parent: await blockToMarkdown(notion, block),
+        children: [],
+      });
+
+      let l = mdBlocks.length;
+      await blocksToMarkdown(child_blocks, mdBlocks[l - 1].children);
+      continue;
+    }
+    let tmp = await blockToMarkdown(notion, block);
+
+    mdBlocks.push({ parent: tmp, children: [] });
+  }
+  return mdBlocks;
+};
+
+const blockToMarkdown = async (notion, block) => {
+  if (!("type" in block)) return "";
+
+  let parsedData = "";
+  const { type } = block;
+
+  switch (type) {
+    case "image":
+      {
+        let blockContent = block.image;
+        const image_caption_plain = blockContent.caption
+          .map((item) => item.plain_text)
+          .join("");
+        const image_type = blockContent.type;
+        if (image_type === "external")
+          return image(image_caption_plain, blockContent.external.url);
+        if (image_type === "file")
+          return image(image_caption_plain, blockContent.file.url);
+      }
+      break;
+
+    case "divider": {
+      return divider();
+    }
+
+    case "equation": {
+      return codeBlock(block.equation.expression);
+    }
+
+    case "video":
+    case "file":
+    case "pdf":
+      {
+        let blockContent;
+        if (type === "video") blockContent = block.video;
+        if (type === "file") blockContent = block.file;
+        if (type === "pdf") blockContent = block.pdf;
+        if (blockContent) {
+          const file_type = blockContent.type;
+          if (file_type === "external")
+            return link("image", blockContent.external.url);
+          if (file_type === "file") return link("image", blockContent.file.url);
+        }
+      }
+      break;
+
+    case "bookmark":
+    case "embed":
+    case "link_preview":
+      {
+        let blockContent;
+        if (type === "bookmark") blockContent = block.bookmark;
+        if (type === "embed") blockContent = block.embed;
+        if (type === "link_preview") blockContent = block.link_preview;
+        if (blockContent) return link(type, blockContent.url);
+      }
+      break;
+
+    case "table": {
+      const { id, has_children } = block;
+      let tableArr;
+      if (has_children) {
+        const tableRows = await getBlockChildren(notion, id, 100);
+        let rowsPromise =
+          tableRows &&
+          tableRows.map(async (row) => {
+            const { type } = row;
+            const cells = row[type]["cells"];
+
+            let cellStringPromise = cells.map(
+              async (cell) =>
+                await blockToMarkdown({
+                  type: "paragraph",
+                  paragraph: { text: cell },
+                })
+            );
+
+            const cellStringArr = await Promise.all(cellStringPromise);
+            tableArr.push(cellStringArr);
+          });
+        await Promise.all(rowsPromise || []);
+      }
+      parsedData = table(tableArr);
+      return parsedData;
+    }
+
+    default: {
+      let blockContent = block[type].text || [];
+      blockContent.map((content) => {
+        const annotations = content.annotations;
+        let plain_text = content.plain_text;
+
+        plain_text = annotatePlainText(plain_text, annotations);
+
+        if (content["href"]) plain_text = link(plain_text, content["href"]);
+
+        parsedData += plain_text;
+      });
+    }
+  }
+
+  switch (type) {
+    case "code":
+      {
+        parsedData = codeBlock(parsedData, block[type].language);
+      }
+      break;
+
+    case "heading_1":
+      {
+        parsedData = heading1(parsedData);
+      }
+      break;
+
+    case "heading_2":
+      {
+        parsedData = heading2(parsedData);
+      }
+      break;
+
+    case "heading_3":
+      {
+        parsedData = heading3(parsedData);
+      }
+      break;
+
+    case "quote":
+      {
+        parsedData = quote(parsedData);
+      }
+      break;
+
+    case "callout":
+      {
+        parsedData = callout(parsedData, block[type].icon);
+      }
+      break;
+
+    case "bulleted_list_item":
+    case "numbered_list_item":
+      {
+        parsedData = bullet(parsedData);
+      }
+      break;
+
+    case "to_do":
+      {
+        parsedData = todo(parsedData, block.to_do.checked);
+      }
+      break;
+  }
+
+  return parsedData;
+};
+
+const annotatePlainText = (text, annotations) => {
+  if (text.match(/^\s*$/)) return text;
+
+  const leadingSpaceMatch = text.match(/^(\s*)/);
+  const trailingSpaceMatch = text.match(/(\s*)$/);
+
+  const leading_space = leadingSpaceMatch ? leadingSpaceMatch[0] : "";
+  const trailing_space = trailingSpaceMatch ? trailingSpaceMatch[0] : "";
+
+  text = text.trim();
+
+  if (text !== "") {
+    if (annotations.code) text = inlineCode(text);
+    if (annotations.bold) text = bold(text);
+    if (annotations.italic) text = italic(text);
+    if (annotations.strikethrough) text = strikethrough(text);
+    if (annotations.underline) text = underline(text);
+  }
+
+  return leading_space + text + trailing_space;
+};
+
+module.exports = { toMarkdownString, pageToMarkdown };
 
 
 /***/ }),
 
-/***/ 6348:
+/***/ 9393:
 /***/ ((module) => {
 
-const getBlockChildren = async (notionClient, block_id, totalPage) => {
-  try {
-    let result = [];
-    let pageCount = 0;
-    let start_cursor = undefined;
+module.exports = eval("require")("./utils/markdown");
 
-    do {
-      const response = await notionClient.blocks.children.list({
-        start_cursor,
-        block_id: block_id,
-      });
-      result.push(...response.results);
 
-      start_cursor = response && response.next_cursor;
-      pageCount += 1;
-    } while (
-      start_cursor != null &&
-      (totalPage == null || pageCount < totalPage)
-    );
-    return result;
-  } catch (e) {
-    console.log(e);
-  }
-};
+/***/ }),
 
-module.exports = getBlockChildren;
+/***/ 6310:
+/***/ ((module) => {
+
+module.exports = eval("require")("./utils/notion");
 
 
 /***/ }),
@@ -8821,7 +8675,7 @@ const fetch = __nccwpck_require__(467);
 const core = __nccwpck_require__(2186);
 const { Client } = __nccwpck_require__(324);
 
-const { toMarkdownString, pageToMarkdown } = __nccwpck_require__(3003);
+const { toMarkdownString, pageToMarkdown } = __nccwpck_require__(9879);
 const commitReadme = __nccwpck_require__(2024);
 const buildReadme = __nccwpck_require__(5068);
 
@@ -8838,9 +8692,7 @@ async function run() {
     const mdString = toMarkdownString(mdblocks);
 
     // Get latest blog posts
-    const blogPostLinks = await fetch(BLOG_API).then((r) =>
-      r.json().then((data) => data.allNotas)
-    );
+    const blogPostLinks = await fetch(BLOG_API).then((r) => r.json());
     // Convert blog posts to markdown
     const postListMarkdown = blogPostLinks.reduce((acc, cur) => {
       return acc + `\n- [${cur.title}](${cur.url})`;

@@ -7,7 +7,7 @@ const fetch = require("node-fetch");
 const core = require("@actions/core");
 const { Client } = require("@notionhq/client");
 
-const { toMarkdownString, pageToMarkdown } = require("./notion-to-markdown");
+const { toMarkdownString, pageToMarkdown } = require("./utils/notion-to-markdown");
 const commitReadme = require("./utils/commitReadme");
 const buildReadme = require("./utils/buildReadme");
 
@@ -24,9 +24,7 @@ async function run() {
     const mdString = toMarkdownString(mdblocks);
 
     // Get latest blog posts
-    const blogPostLinks = await fetch(BLOG_API).then((r) =>
-      r.json().then((data) => data.allNotas)
-    );
+    const blogPostLinks = await fetch(BLOG_API).then((r) => r.json());
     // Convert blog posts to markdown
     const postListMarkdown = blogPostLinks.reduce((acc, cur) => {
       return acc + `\n- [${cur.title}](${cur.url})`;
